@@ -25,6 +25,7 @@
  *     `# not a heading` inside a code block from being reinterpreted
  *     as a real heading by the regex rules further down.
  */
+
 function tinymarkdwn(md) {
   if (typeof md !== 'string') return '';
 
@@ -116,9 +117,9 @@ function tinymarkdwn(md) {
 //  2. CommonJS: const { tinymarkdwn } = require('./md.js')
 //  3. ES modules / bundlers (webpack, Vite, etc.) that understand CJS interop
 //     can `import { tinymarkdwn } from './md.js'` against the module.exports below.
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = tinymarkdwn;
-  module.exports.tinymarkdwn = tinymarkdwn;
+if (typeof module !== 'undefined' && module['exports']) {
+  module['exports'] = tinymarkdwn;
+  module['exports']['tinymarkdwn'] = tinymarkdwn;
 } else if (typeof globalThis !== 'undefined') {
-  globalThis.tinymarkdwn = tinymarkdwn;
+  globalThis['tinymarkdwn'] = tinymarkdwn;
 }

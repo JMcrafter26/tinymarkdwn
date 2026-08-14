@@ -1,39 +1,65 @@
-// Just a simple test to make sure the javascript file does what it should
-let tests = 2;
-let passed = 0;
-function passTest() {
-    console.log(`Passed! ${++passed}/${tests}`);
-}
+// Test suite for tinymarkdwn. Run with `node tests/test.js` (src build)
+// or `node tests/test.js --dist` (minified build).
 
-// Load the tinymarkdwn function from the src/index.js file
-const tinymarkdwn = require('../src/index.js');
-
-// Test the tinymarkdwn function with a simple markdown string
-const markdownString = `# Hello World\nThis is a **bold** text.`;
-const expectedHtml = '<h1>Hello World</h1>\n<p>This is a <strong>bold</strong> text.</p>';
-
-try {
-const result = tinymarkdwn(markdownString);
-if (result !== expectedHtml) {
-    throw new Error(`Expected: ${expectedHtml}, but got: ${result}`);
-}
-} catch (err) {
-    throw new Error(`Error processing markdown string: ${err.message}`);
-}
-passTest();
-
-// Load actual markdown from a file and convert it to HTML
 const fs = require('fs');
 const path = require('path');
 
-const markdownFilePath = path.join(__dirname, 'test.md');
-try {
-    const markdownContent = fs.readFileSync(markdownFilePath, 'utf8');
-    const htmlContent = tinymarkdwn(markdownContent);
-    // Save for inspection if needed
-    const outputFilePath = path.join(__dirname, 'output.html');
-    fs.writeFileSync(outputFilePath, htmlContent, 'utf8');
-} catch (err) {
-    throw new Error(`Error processing markdown file: ${err.message}`);
+const root = path.resolve(__dirname, '..');
+const isDist = process.argv.includes('--dist');
+const entry = path.join(root, isDist ? 'dist/md.min.js' : 'src/index.js');
+const tinymarkdwn = require(entry).tinymarkdwn;
+
+let passed = 0;
+let failed = 0;
+
+function assert(name, actual, expected) {
+  if (actual === expected) {
+    passed++;
+    console.log(`✓ ${name}`); // some fancy ascii, cool huh?
+  } else {
+    failed++;
+    console.log(`✗ ${name}`);
+    console.log(`  expected: ${JSON.stringify(expected)}`);
+    console.log(`  actual:   ${JSON.stringify(actual)}`);
+  }
 }
-passTest();
+
+// --- Case-by-case checks -------------------------------------------------
+// Add new cases here as plain { name, input, expected } entries; no other
+// bookkeeping (counters, etc.) needs to change.
+const cases = [
+  {
+    name: 'heading + paragraph, no blank line between',
+    input: '# Hello World\nThis is a **bold** text.',
+    expected: '<h1>Hello World</h1>\n<p>This is a <strong>bold</strong> text.</p>',
+  },
+];
+
+for (const { name, input, expected } of cases) {
+  assert(name, tinymarkdwn(input), expected);
+}
+
+// --- Smoke test: convert a real markdown file end-to-end -----------------
+// This doesn't assert exact output (real-world markdown is too varied for
+// a fixed expected string) — it just confirms the function runs on a
+// larger, realistic input without throwing, and saves the result so you
+// can eyeball it. `tests/test.md` is optional; skipped if not present.
+const sampleFile = path.join(__dirname, 'test.md');
+if (fs.existsSync(sampleFile)) {
+  try {
+    const markdown = fs.readFileSync(sampleFile, 'utf8');
+    const html = tinymarkdwn(markdown);
+    fs.writeFileSync(path.join(__dirname, 'output.html'), html, 'utf8');
+    passed++;
+    console.log('✓ converts tests/test.md without throwing (see tests/output.html)');
+  } catch (err) {
+    failed++;
+    console.log(`✗ converting tests/test.md threw: ${err.message}`);
+  }
+} else {
+  console.log('… skipped tests/test.md smoke test (file not found)');
+}
+
+// --- Summary ---------------------------------------------------------------
+console.log(`\n${passed}/${passed + failed} passed`);
+process.exit(failed === 0 ? 0 : 1);
