@@ -10,7 +10,7 @@ const tinymarkdwn = require('../src/index.js');
 
 // Test the tinymarkdwn function with a simple markdown string
 const markdownString = `# Hello World\nThis is a **bold** text.`;
-const expectedHtml = '<h1>Hello World</h1>\nThis is a <strong>bold</strong> text.';
+const expectedHtml = '<h1>Hello World</h1>\n<p>This is a <strong>bold</strong> text.</p>';
 
 try {
 const result = tinymarkdwn(markdownString);

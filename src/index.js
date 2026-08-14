@@ -56,8 +56,8 @@ function tinymarkdwn(md) {
 
   // Escape the whole document first, THEN pull out fenced code blocks —
   // order matters: esc() must see the raw ``` fences too, and the code
-  // block's own contents get esc()'d separately inside the callback via `c`,
-  // which is already escaped at this point since esc() ran on the full string.
+  // block's own contents (`code`) are already escaped at this point
+  // since esc() ran on the full string before this .replace().
   let s = esc(md).replace(/```(\S*)\n([\s\S]*?)```/g, (_, lang, code) =>
     stash(`<pre><code${lang ? ` class="language-${lang}"` : ''}>${code}</code></pre>`));
 
@@ -74,21 +74,35 @@ function tinymarkdwn(md) {
     .replace(/^ {0,3}([-*_])( *\1){2,} *$/gm, '<hr>')
     // Blockquote: merge consecutive "> " lines into one <blockquote>, joined by <br>
     .replace(/^(?: {0,3}>.*\n?)+/gm, b => `<blockquote>${b.replace(/^ {0,3}>\s?/gm, '').trim().split('\n').map(inline).join('<br>')}</blockquote>`)
-    // Ordered list: merge consecutive "1. " lines (single level, no nesting — see note below)
+    // Ordered list: merge consecutive "1. " lines (single level, no nesting)
     .replace(/^(?: {0,3}\d+\.\s+.*\n?)+/gm, b => `<ol>${b.trim().split('\n').map(l => `<li>${inline(l.replace(/^ {0,3}\d+\.\s+/, ''))}</li>`).join('')}</ol>`)
     // Unordered list: merge consecutive -/*/+ lines; also handles GFM task checkboxes [ ] / [x]
     .replace(/^(?: {0,3}[-*+]\s+.*\n?)+/gm, b => `<ul>${b.trim().split('\n').map(l => {
         const c = l.replace(/^ {0,3}[-*+]\s+/, '').replace(/^\[( |x|X)\]\s*/, (_, ch) => `<input type="checkbox" disabled${ch !== ' ' ? ' checked' : ''}> `);
         return `<li>${inline(c)}</li>`;
       }).join('')}</ul>`)
-    // Paragraphs: split on blank lines; anything that isn't already a
-    // block tag (or a stashed code placeholder standing alone) gets
-    // wrapped in <p>, with remaining single \n turned into <br>.
+    // Paragraphs: split the document on blank lines into blocks, then
+    // walk each block LINE BY LINE. Lines that are already block-level
+    // HTML (headings/lists/tables/etc. from the rules above, or a
+    // stashed code placeholder) pass through untouched; consecutive
+    // plain-text lines are batched into a single <p>, with the "\n
+    // inside a paragraph" case joined as <br> between them. This is
+    // what lets e.g. "# Heading\nplain text" (no blank line between
+    // them) still render the plain text as its own paragraph instead
+    // of being swallowed into the heading's block.
     .split(/\n{2,}/)
-    .map(b => {
-      b = b.trim();
-      if (!b) return '';
-      return /^<(h\d|ul|ol|blockquote|hr|table)/.test(b) || /^\u0000\d+\u0000$/.test(b) ? b : `<p>${inline(b).replace(/\n/g, '<br>')}</p>`;
+    .map(block => {
+      const isBlockTag = (l) => /^<(h\d|ul|ol|blockquote|hr|table)/.test(l) || /^\u0000\d+\u0000$/.test(l);
+      let html = '', buf = [];
+      const flush = () => { if (buf.length) { html += `<p>${buf.map(inline).join('<br>')}</p>\n`; buf = []; } };
+      for (const line of block.split('\n')) {
+        const t = line.trim();
+        if (!t) continue;
+        if (isBlockTag(t)) { flush(); html += t + '\n'; }
+        else buf.push(t);
+      }
+      flush();
+      return html.trim();
     })
     .join('\n');
 
