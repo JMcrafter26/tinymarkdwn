@@ -22,11 +22,15 @@ function helloWorld() {
 }
 ```
 
+An escaped code block:
+
+\`\`\`javascript
+function helloWorld() {
+  console.log("Hello, world!");
+}
+\`\`\`
+
 Inline code: `const answerToLife = 42;`
-
-Fenced code block with language specified:
-
-```python\nprint("Hello, Python!")\n```
 
 > And some blockquotes:
 >

@@ -29,6 +29,12 @@
 function tinymarkdwn(md) {
   if (typeof md !== 'string') return '';
 
+  // Normalize Windows/Mac line endings to \n before any parsing. Most of the
+  // multiline regexes below (code fences, blockquotes, tables, lists,
+  // paragraph splitting) assume Unix newlines, so this fixes \r\n input in
+  // one central place.
+  md = md.replace(/\r\n?/g, '\n');
+
   // Escape the 5 HTML-significant characters via a single lookup table
   // instead of 5 chained .replace() calls — smaller, same result.
   const esc = (t) => t.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -64,7 +70,7 @@ function tinymarkdwn(md) {
 
   s = s
     // GFM table: header row, separator row (---|---), then body rows.
-    .replace(/^(\|.+\|)\n\|[ :-|]+\|\n((?:\|.*\|\n?)*)/gm, (_, head, body) => {
+    .replace(/^(\|.+\|)\n\|[-: |]+\|\n((?:\|.*\|\n?)*)/gm, (_, head, body) => {
       const row = (r, tag) => '<tr>' + r.replace(/^\||\|$/g, '').split('|').map(c => `<${tag}>${inline(c.trim())}</${tag}>`).join('') + '</tr>';
       const rows = body.trim().split('\n').filter(Boolean).map(r => row(r, 'td')).join('');
       return `<table><thead>${row(head, 'th')}</thead><tbody>${rows}</tbody></table>\n`;
@@ -73,10 +79,13 @@ function tinymarkdwn(md) {
     .replace(/^ {0,3}(#{1,6}) +(.*)$/gm, (_, h, t) => `<h${h.length}>${inline(t)}</h${h.length}>`)
     // Horizontal rule: a line of 3+ matching -, *, or _ (optionally spaced)
     .replace(/^ {0,3}([-*_])( *\1){2,} *$/gm, '<hr>')
-    // Blockquote: merge consecutive "> " lines into one <blockquote>, joined by <br>
-    .replace(/^(?: {0,3}>.*\n?)+/gm, b => `<blockquote>${b.replace(/^ {0,3}>\s?/gm, '').trim().split('\n').map(inline).join('<br>')}</blockquote>`)
-    // Ordered list: merge consecutive "1. " lines (single level, no nesting)
-    .replace(/^(?: {0,3}\d+\.\s+.*\n?)+/gm, b => `<ol>${b.trim().split('\n').map(l => `<li>${inline(l.replace(/^ {0,3}\d+\.\s+/, ''))}</li>`).join('')}</ol>`)
+    // Blockquote: merge consecutive "> " lines into one <blockquote>, joined by <br>.
+    .replace(/^(?: {0,3}&gt;.*\n?)+/gm, b => `<blockquote>${b.replace(/^ {0,3}&gt;\s?/gm, '').trim().split('\n').map(inline).join('<br>')}</blockquote>`)
+    // Ordered list: merge consecutive "1. " lines (single level, no nesting); also handles GFM task checkboxes [ ] / [x]
+    .replace(/^(?: {0,3}\d+\.\s+.*\n?)+/gm, b => `<ol>${b.trim().split('\n').map(l => {
+        const c = l.replace(/^ {0,3}\d+\.\s+/, '').replace(/^\[( |x|X)\]\s*/, (_, ch) => `<input type="checkbox" disabled${ch !== ' ' ? ' checked' : ''}> `);
+        return `<li>${inline(c)}</li>`;
+      }).join('')}</ol>`)
     // Unordered list: merge consecutive -/*/+ lines; also handles GFM task checkboxes [ ] / [x]
     .replace(/^(?: {0,3}[-*+]\s+.*\n?)+/gm, b => `<ul>${b.trim().split('\n').map(l => {
         const c = l.replace(/^ {0,3}[-*+]\s+/, '').replace(/^\[( |x|X)\]\s*/, (_, ch) => `<input type="checkbox" disabled${ch !== ' ' ? ' checked' : ''}> `);
