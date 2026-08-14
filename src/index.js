@@ -96,3 +96,15 @@ function tinymarkdwn(md) {
   // rule can misinterpret their contents.
   return s.replace(/\u0000(\d+)\u0000/g, (_, i) => store[i]).trim();
 }
+
+// Works three ways with zero config changes needed by the consumer:
+//  1. Plain <script src="md.js"> — creates window.tinymarkdwn (CDN use case, unchanged)
+//  2. CommonJS: const { tinymarkdwn } = require('./md.js')
+//  3. ES modules / bundlers (webpack, Vite, etc.) that understand CJS interop
+//     can `import { tinymarkdwn } from './md.js'` against the module.exports below.
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = tinymarkdwn;
+  module.exports.tinymarkdwn = tinymarkdwn;
+} else if (typeof globalThis !== 'undefined') {
+  globalThis.tinymarkdwn = tinymarkdwn;
+}
