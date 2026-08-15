@@ -1,6 +1,6 @@
 {
 	"name": "TinyMarkDwn",
-	"version": "1.0.0",
+	"version": "1.1.0",
 	"devDependencies": {
 		"terser": "^5.50.0"
 	}

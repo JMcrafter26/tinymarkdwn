@@ -43,23 +43,32 @@ for (const { name, input, expected } of cases) {
 // This doesn't assert exact output (real-world markdown is too varied for
 // a fixed expected string) — it just confirms the function runs on a
 // larger, realistic input without throwing, and saves the result so you
-// can eyeball it. `tests/test.md` is optional; skipped if not present.
-const sampleFile = path.join(__dirname, 'test.md');
-if (fs.existsSync(sampleFile)) {
-  try {
-    const markdown = fs.readFileSync(sampleFile, 'utf8');
-    const html = tinymarkdwn(markdown);
-    fs.writeFileSync(path.join(__dirname, 'output.html'), html, 'utf8');
-    passed++;
-    console.log('✓ converts tests/test.md without throwing (see tests/output.html)');
-  } catch (err) {
-    failed++;
-    console.log(`✗ converting tests/test.md threw: ${err.message}`);
-  }
-} else {
-  console.log('… skipped tests/test.md smoke test (file not found)');
-}
+// can eyeball it.
 
+const testFiles = ['test.md', 'gh_test.md', 'xss.md'];
+
+for (const testFile of testFiles) {
+  const sampleFile = path.join(__dirname, testFile);
+  // const sampleFile = path.join(__dirname, 'gh_test.md');
+  if (fs.existsSync(sampleFile)) {
+    try {
+      const markdown = fs.readFileSync(sampleFile, 'utf8');
+      const html = tinymarkdwn(markdown);
+      if (!fs.existsSync(path.join(__dirname, 'test_output'))) {
+        fs.mkdirSync(path.join(__dirname, 'test_output'));
+      }
+      fs.writeFileSync(path.join(path.join(__dirname, 'test_output'), `${testFile.replace('.md', '')}.html`), html, 'utf8');
+      passed++;
+      console.log(`✓ converts ${testFile} without throwing (see tests/output.html)`);
+    } catch (err) {
+      failed++;
+      console.log(`✗ converting ${testFile} threw: ${err.message}`);
+    }
+  } else {
+    console.log(`… skipped ${testFile} smoke test (file not found)`);
+  }
+}
 // --- Summary ---------------------------------------------------------------
 console.log(`\n${passed}/${passed + failed} passed`);
+
 process.exit(failed === 0 ? 0 : 1);

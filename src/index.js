@@ -4,7 +4,7 @@
  * Supports: headings, hr, blockquotes, flat ordered/unordered lists
  * (incl. GFM task-list checkboxes), GFM tables, fenced + inline code,
  * bold/italic/bold+italic, strikethrough, links, images, autolinks,
- * and paragraphs.
+ * paragraphs, and backslash escapes for Markdown punctuation.
  *
  * SECURITY NOTE: This is a "best effort" Markdown parser, not a security library.
  * It is designed to be safe against XSS attacks, but it is not a formal
@@ -24,6 +24,10 @@
  *     rule runs, and restored only at the very end. This stops e.g.
  *     `# not a heading` inside a code block from being reinterpreted
  *     as a real heading by the regex rules further down.
+ *  4. Backslash escapes are stashed just like code, so escaped `\*`,
+ *     `\_`, `\[`, `\<https://...\>`, etc. are restored only after all
+ *     inline regexes have run. This keeps them literal and prevents
+ *     them from being re-parsed as Markdown or HTML.
  */
 
 function tinymarkdwn(md) {
@@ -48,11 +52,21 @@ function tinymarkdwn(md) {
   const store = [];
   const stash = (h) => '\u0000' + (store.push(h) - 1) + '\u0000';
 
+  // Backslash escapes: a backslash before any ASCII punctuation makes
+  // that punctuation literal. We process this AFTER inline code spans
+  // are stashed so backslashes inside code are left untouched.
+  // Note: after esc(), the characters & < > " ' have already become
+  // HTML entities. For those, we only stash the leading '&' and leave
+  // the rest of the entity in place. Everything else is stored as a
+  // numeric character reference so no later regex can reinterpret it.
+  const unescapeRe = /\\([!"#$%&'()*+,\-.\/:;<=>?@\[\\\]^_`{|}~])/g;
+
   // Formats inline markdown (emphasis, links, code, etc.) within one
   // already-escaped chunk of text. Called from every block type below
   // so link/emphasis handling only needs to exist in one place.
   const inline = (t) => t
-    .replace(/`([^`\n]+)`/g, (_, c) => stash(`<code>${c}</code>`)) // inline code — stash first so `*` etc. inside it is left alone
+    .replace(/(?<!\\)`([^`\n]+)(?<!\\)`/g, (_, c) => stash(`<code>${c}</code>`)) // inline code — stash first so `*` etc. inside it is left alone
+    .replace(unescapeRe, (_, c) => stash(c === '&' ? '&' : `&#${c.charCodeAt(0)};`)) // backslash escapes — stashed so they can't become syntax again
     .replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/g, (_, a, u, ti) => `<img src="${safeUrl(u)}" alt="${a}"${ti ? ` title="${ti}"` : ''}>`) // images before links (shares the `[...]()` shape)
     .replace(/\[([^\]]+)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/g, (_, x, u, ti) => `<a href="${safeUrl(u)}"${ti ? ` title="${ti}"` : ''} rel="noopener noreferrer">${x}</a>`) // [text](url "title")
     .replace(/&lt;((?:https?|mailto):[^\s&]+)&gt;/g, (_, u) => `<a href="${safeUrl(u)}" rel="noopener noreferrer">${u}</a>`) // <https://...> autolinks (note: matched post-escape, so &lt;/&gt; not <, >)
@@ -65,13 +79,17 @@ function tinymarkdwn(md) {
   // order matters: esc() must see the raw ``` fences too, and the code
   // block's own contents (`code`) are already escaped at this point
   // since esc() ran on the full string before this .replace().
-  let s = esc(md).replace(/```(\S*)\n([\s\S]*?)```/g, (_, lang, code) =>
+  // The negative lookbehind on both fences keeps \`\`\` from starting
+  // or ending a code block, so it can be rendered literally instead.
+  let s = esc(md).replace(/(?<!\\)```(\S*)\n([\s\S]*?)(?<!\\)```/g, (_, lang, code) =>
     stash(`<pre><code${lang ? ` class="language-${lang}"` : ''}>${code}</code></pre>`));
 
   s = s
     // GFM table: header row, separator row (---|---), then body rows.
+    // The separator class is [-: |] so the hyphen is literal, not a range.
+    // Cells are split on pipes that are NOT escaped with a backslash.
     .replace(/^(\|.+\|)\n\|[-: |]+\|\n((?:\|.*\|\n?)*)/gm, (_, head, body) => {
-      const row = (r, tag) => '<tr>' + r.replace(/^\||\|$/g, '').split('|').map(c => `<${tag}>${inline(c.trim())}</${tag}>`).join('') + '</tr>';
+      const row = (r, tag) => '<tr>' + r.replace(/^\||\|$/g, '').split(/(?<!\\)\|/).map(c => `<${tag}>${inline(c.trim())}</${tag}>`).join('') + '</tr>';
       const rows = body.trim().split('\n').filter(Boolean).map(r => row(r, 'td')).join('');
       return `<table><thead>${row(head, 'th')}</thead><tbody>${rows}</tbody></table>\n`;
     })
@@ -80,6 +98,7 @@ function tinymarkdwn(md) {
     // Horizontal rule: a line of 3+ matching -, *, or _ (optionally spaced)
     .replace(/^ {0,3}([-*_])( *\1){2,} *$/gm, '<hr>')
     // Blockquote: merge consecutive "> " lines into one <blockquote>, joined by <br>.
+    // Since esc() has already turned ">" into "&gt;", match that escaped form.
     .replace(/^(?: {0,3}&gt;.*\n?)+/gm, b => `<blockquote>${b.replace(/^ {0,3}&gt;\s?/gm, '').trim().split('\n').map(inline).join('<br>')}</blockquote>`)
     // Ordered list: merge consecutive "1. " lines (single level, no nesting); also handles GFM task checkboxes [ ] / [x]
     .replace(/^(?: {0,3}\d+\.\s+.*\n?)+/gm, b => `<ol>${b.trim().split('\n').map(l => {
@@ -116,8 +135,8 @@ function tinymarkdwn(md) {
     })
     .join('\n');
 
-  // Put the protected code blocks/spans back in, now that no further
-  // rule can misinterpret their contents.
+  // Put the protected code blocks/spans/escaped characters back in, now
+  // that no further rule can misinterpret their contents.
   return s.replace(/\u0000(\d+)\u0000/g, (_, i) => store[i]).trim();
 }
 
