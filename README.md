@@ -83,9 +83,9 @@ However, if you need a more feature-rich Markdown parser, or one that supports e
 
 But why not give TinyMarkDwn a [try](#installation) first?
 
-<!-- ## Online Demo
+## Online Demo
 
-Coming soon! You will be able to try out TinyMarkDwn in your browser without having to install anything. Stay tuned! -->
+You can try it here: [tinymarkdwn-editor](https://jmcrafter26.github.io/tinymarkdwn-editor/), it uses tinymarkdwn under the hood
 
 ## Sanitization
 
