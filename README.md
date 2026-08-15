@@ -27,7 +27,13 @@ All of this is done with a single function call, and no configuration is require
 
 ## Installation
 
-TinyMarkDwn supports multiple installation methods:
+TinyMarkDwn supports multiple installation methods.
+
+Use npm/pnpm/yarn to install TinyMarkDwn.
+
+```bash
+npm install tinymarkdwn
+```
 
 ### ES Modules / Bundlers
 
@@ -35,13 +41,6 @@ E.g. with Webpack, Vite, Rollup, etc.
 
 ```js
 import { tinymarkdwn } from 'tinymarkdwn';
-```
-
-> [!NOTE]
-> NPM package name will be confirmed soon. For now, you can use the GitHub repository directly:
-
-```bash
-npm install JMcrafter26/tinymarkdwn
 ```
 
 ### CommonJS
@@ -57,7 +56,7 @@ const { tinymarkdwn } = require('tinymarkdwn');
 E.g. in a browser without a bundler, just include the following script tag in your HTML:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/JMcrafter26/tinymarkdwn@main/dist/tinymarkdwn.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tinymarkdwn@1/dist/tinymarkdwn.min.js"></script>
 ```
 
 ## Usage
