@@ -28,13 +28,6 @@ export function buildPlainHtml(title: string, markdown: string): string {
 	return shell(title, '', tinymarkdwn(markdown));
 }
 
-export function buildStyledHtmlCdn(title: string, markdown: string): string {
-	// Tailwind's Play CDN, with the Typography plugin for free `prose` styling
-	const head = `\t<script src="https://cdn.tailwindcss.com?plugins=typography"></script>`;
-	const body = `<article class="prose dark:prose-invert mx-auto max-w-3xl p-8">\n${tinymarkdwn(markdown)}\n</article>`;
-	return shell(title, head, body);
-}
-
 const OFFLINE_STYLES = `
 	:root { color-scheme: light dark; }
 	body { margin: 0; padding: 3rem 1.5rem; font-family: ui-sans-serif, system-ui, sans-serif; line-height: 1.7; color: #1f2328; background: #fff; }

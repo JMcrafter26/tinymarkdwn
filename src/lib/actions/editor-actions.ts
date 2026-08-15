@@ -58,11 +58,11 @@ export function redoActiveTab() {
 	if (tabsStore.active) tabsStore.redo(tabsStore.active.id);
 }
 
-export function exportActiveTab(kind: 'plain' | 'cdn' | 'offline') {
+export function exportActiveTab(kind: 'plain' |'offline') {
 	const tab = tabsStore.active;
 	if (!tab) return;
 	const name = tab.title.replace(/\.[^./]+$/, '');
-	const builders = { plain: buildPlainHtml, cdn: buildStyledHtmlCdn, offline: buildStyledHtmlOffline };
+	const builders = { plain: buildPlainHtml, offline: buildStyledHtmlOffline };
 	downloadHtml(name, builders[kind](name, tab.content));
 	toast.success(`Exported ${name}.html`);
 }

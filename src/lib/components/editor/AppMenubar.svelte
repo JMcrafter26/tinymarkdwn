@@ -43,8 +43,7 @@
 				<Menubar.SubTrigger>Export</Menubar.SubTrigger>
 				<Menubar.SubContent>
 					<Menubar.Item onSelect={() => exportActiveTab('plain')}>Plain HTML</Menubar.Item>
-					<Menubar.Item onSelect={() => exportActiveTab('cdn')}>Styled HTML (CDN)</Menubar.Item>
-					<Menubar.Item onSelect={() => exportActiveTab('offline')}>Styled HTML (Offline)</Menubar.Item>
+					<Menubar.Item onSelect={() => exportActiveTab('offline')}>Styled HTML</Menubar.Item>
 				</Menubar.SubContent>
 			</Menubar.Sub>
 			<Menubar.Separator />
