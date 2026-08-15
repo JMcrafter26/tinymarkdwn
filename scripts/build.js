@@ -21,11 +21,16 @@ async function build() {
   // this file is loaded as a plain <script> tag alongside other libraries.
   const wrapped = `(function(){\n${code}\n})();`;
 
+  // add short header comment to the top of the minified file, from package.json
+  const packageJson = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
+  const headerComment = `/*! ${packageJson.name} v${packageJson.version} | ${packageJson.license} License | ${packageJson.homepage} */\n`;
+  const finalOutput = headerComment + wrapped;
+
   fs.mkdirSync(path.dirname(outFile), { recursive: true });
-  fs.writeFileSync(outFile, wrapped, 'utf8');
+  fs.writeFileSync(outFile, finalOutput, 'utf8');
 
   const originalSize = Buffer.byteLength(source, 'utf8');
-  const minifiedSize = Buffer.byteLength(wrapped, 'utf8');
+  const minifiedSize = Buffer.byteLength(finalOutput, 'utf8');
   const reduction = (((originalSize - minifiedSize) / originalSize) * 100).toFixed(2);
 
   console.log(`Minified: ${originalSize} -> ${minifiedSize} bytes (-${reduction}%)`);

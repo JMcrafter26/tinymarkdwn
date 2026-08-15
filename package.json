@@ -1,6 +1,8 @@
 {
 	"name": "TinyMarkDwn",
 	"version": "1.1.0",
+	"license": "MIT",
+	"homepage": "github.com/JMcrafter26/tinymarkdwn",
 	"devDependencies": {
 		"terser": "^5.50.0"
 	}
