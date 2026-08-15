@@ -32,9 +32,13 @@ async function build() {
   const originalSize = Buffer.byteLength(source, 'utf8');
   const minifiedSize = Buffer.byteLength(finalOutput, 'utf8');
   const reduction = (((originalSize - minifiedSize) / originalSize) * 100).toFixed(2);
-
-  console.log(`Minified: ${originalSize} -> ${minifiedSize} bytes (-${reduction}%)`);
-  console.log(`Output written to ${path.relative(root, outFile)}`);
+  
+  import('zlib').then(zlib => {
+    const gzippedSize = (zlib.gzipSync(finalOutput).length / 1024).toFixed(2);
+    console.log(`Minified: ${originalSize} -> ${minifiedSize} bytes (-${reduction}%)`);
+    console.log(`Gzipped: ${gzippedSize} kb`);
+    console.log(`Output written to ${path.relative(root, outFile)}`);
+  });
 }
 
 async function runTests() {
