@@ -6,7 +6,7 @@ const path = require('path');
 
 const root = path.resolve(__dirname, '..');
 const isDist = process.argv.includes('--dist');
-const entry = path.join(root, isDist ? 'dist/md.min.js' : 'src/index.js');
+const entry = path.join(root, isDist ? 'dist/tinymarkdwn.min.js' : 'src/index.js');
 const tinymarkdwn = require(entry).tinymarkdwn;
 
 let passed = 0;

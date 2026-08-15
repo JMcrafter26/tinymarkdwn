@@ -10,7 +10,7 @@ const execAsync = promisify(exec);
 
 const root = path.resolve(__dirname, '..');
 const srcFile = path.join(root, 'src', 'index.js');
-const outFile = path.join(root, 'dist', 'md.min.js');
+const outFile = path.join(root, 'dist', 'tinymarkdwn.min.js');
 const testFile = path.join(root, 'tests', 'test.js');
 
 async function build() {
