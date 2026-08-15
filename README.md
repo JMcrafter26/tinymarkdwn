@@ -19,7 +19,7 @@ It supports a wide range of Markdown features:
 - inline code
 - Tables
 
-It's also tiny and even comes with basic sanitization features to prevent XSS attacks when rendering user-generated content.[*](#sanitization)
+It's also tiny, has no external dependencies, and even comes with basic sanitization features to prevent XSS attacks when rendering user-generated content.[*](#sanitization)
 
 All of this is done with a single function call, and no configuration is required. Just pass in your Markdown string, and get back the corresponding HTML string.
 

@@ -41,7 +41,7 @@ function tinymarkdwn(md) {
 
   // Escape the 5 HTML-significant characters via a single lookup table
   // instead of 5 chained .replace() calls — smaller, same result.
-  const esc = (t) => t.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const esc = (t) => t.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
   // Scheme allowlist for URLs — the main XSS guard for links/images.
   const safeUrl = (u) => /^(https?:|mailto:|\/|#|\.{1,2}\/)/i.test(u.trim()) ? u.trim() : '#';
@@ -102,14 +102,14 @@ function tinymarkdwn(md) {
     .replace(/^(?: {0,3}&gt;.*\n?)+/gm, b => `<blockquote>${b.replace(/^ {0,3}&gt;\s?/gm, '').trim().split('\n').map(inline).join('<br>')}</blockquote>`)
     // Ordered list: merge consecutive "1. " lines (single level, no nesting); also handles GFM task checkboxes [ ] / [x]
     .replace(/^(?: {0,3}\d+\.\s+.*\n?)+/gm, b => `<ol>${b.trim().split('\n').map(l => {
-        const c = l.replace(/^ {0,3}\d+\.\s+/, '').replace(/^\[( |x|X)\]\s*/, (_, ch) => `<input type="checkbox" disabled${ch !== ' ' ? ' checked' : ''}> `);
-        return `<li>${inline(c)}</li>`;
-      }).join('')}</ol>`)
+      const c = l.replace(/^ {0,3}\d+\.\s+/, '').replace(/^\[( |x|X)\]\s*/, (_, ch) => `<input type="checkbox" disabled${ch !== ' ' ? ' checked' : ''}> `);
+      return `<li>${inline(c)}</li>`;
+    }).join('')}</ol>`)
     // Unordered list: merge consecutive -/*/+ lines; also handles GFM task checkboxes [ ] / [x]
     .replace(/^(?: {0,3}[-*+]\s+.*\n?)+/gm, b => `<ul>${b.trim().split('\n').map(l => {
-        const c = l.replace(/^ {0,3}[-*+]\s+/, '').replace(/^\[( |x|X)\]\s*/, (_, ch) => `<input type="checkbox" disabled${ch !== ' ' ? ' checked' : ''}> `);
-        return `<li>${inline(c)}</li>`;
-      }).join('')}</ul>`)
+      const c = l.replace(/^ {0,3}[-*+]\s+/, '').replace(/^\[( |x|X)\]\s*/, (_, ch) => `<input type="checkbox" disabled${ch !== ' ' ? ' checked' : ''}> `);
+      return `<li>${inline(c)}</li>`;
+    }).join('')}</ul>`)
     // Paragraphs: split the document on blank lines into blocks, then
     // walk each block LINE BY LINE. Lines that are already block-level
     // HTML (headings/lists/tables/etc. from the rules above, or a
@@ -146,8 +146,8 @@ function tinymarkdwn(md) {
 //  3. ES modules / bundlers (webpack, Vite, etc.) that understand CJS interop
 //     can `import { tinymarkdwn } from './md.js'` against the module.exports below.
 if (typeof module !== 'undefined' && module['exports']) {
-  module['exports'] = tinymarkdwn;
-  module['exports']['tinymarkdwn'] = tinymarkdwn;
+  module.exports = tinymarkdwn;
+  module.exports.tinymarkdwn = tinymarkdwn;
 } else if (typeof globalThis !== 'undefined') {
   globalThis['tinymarkdwn'] = tinymarkdwn;
 }

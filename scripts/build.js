@@ -23,7 +23,7 @@ async function build() {
 
   // add short header comment to the top of the minified file, from package.json
   const packageJson = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
-  const headerComment = `/*! ${packageJson.name} v${packageJson.version} | ${packageJson.license} License | ${packageJson.homepage} */\n`;
+  const headerComment = `/*! ${packageJson.name} v${packageJson.version} | ${packageJson.license} License | ${packageJson.homepage.replace('https://', '')} */\n`;
   const finalOutput = headerComment + wrapped;
 
   fs.mkdirSync(path.dirname(outFile), { recursive: true });
@@ -32,7 +32,7 @@ async function build() {
   const originalSize = Buffer.byteLength(source, 'utf8');
   const minifiedSize = Buffer.byteLength(finalOutput, 'utf8');
   const reduction = (((originalSize - minifiedSize) / originalSize) * 100).toFixed(2);
-  
+
   import('zlib').then(zlib => {
     const gzippedSize = (zlib.gzipSync(finalOutput).length / 1024).toFixed(2);
     console.log(`Minified: ${originalSize} -> ${minifiedSize} bytes (-${reduction}%)`);
@@ -47,10 +47,21 @@ async function runTests() {
   console.log(stdout);
 }
 
+async function addMjsExport() {
+  const mjsFile = path.join(root, 'dist', 'tinymarkdwn.mjs');
+  const mjsContent = `import m from './tinymarkdwn.min.js';
+  export const tinymarkdwn = m.tinymarkdwn || m;
+  export default m;
+`;
+  fs.writeFileSync(mjsFile, mjsContent, 'utf8');
+  console.log(`ES module export written to ${path.relative(root, mjsFile)}`);
+}
+
 (async () => {
   try {
     await build();
     await runTests();
+    await addMjsExport();
     console.log('All tests passed successfully.');
   } catch (err) {
     console.error('Build failed:', err.message);
